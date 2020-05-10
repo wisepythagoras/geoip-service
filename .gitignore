@@ -1,2 +1,4 @@
 geoip-service
 geolite/*.mmdb
+.conf
+GeoLite2-*_*/
