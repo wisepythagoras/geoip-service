@@ -2,3 +2,5 @@ geoip-service
 geolite/*.mmdb
 .conf
 GeoLite2-*_*/
+GeoLite2*.gz
+*.tar.xz
