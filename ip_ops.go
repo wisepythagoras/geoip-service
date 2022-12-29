@@ -36,6 +36,13 @@ func ParseIPList(file *os.File) ([]*net.IPNet, []net.IP, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		re := regexp.MustCompile(`(#[\s\S]+)`)
+		line = strings.Trim(re.ReplaceAllLiteralString(line, ""), " ")
+
+		if len(line) == 0 {
+			continue
+		}
+
 		isCidrRange := strings.Contains(line, "/")
 
 		if isCidrRange {
