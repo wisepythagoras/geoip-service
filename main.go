@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,39 @@ import (
 var cityMmdb *maxminddb.Reader
 var asnMmdb *maxminddb.Reader
 var err error
+var whiteListedIPRanges []*net.IPNet
+var whiteListedIPs []net.IP
+var hasWhitelist = false
+
+func middleware(c *gin.Context) {
+	// If there was no whitelist specified, then we can proceed.
+	if !hasWhitelist {
+		c.Next()
+		return
+	}
+
+	clientIP := net.ParseIP(c.ClientIP())
+
+	if val := c.GetHeader("True-Client-IP"); len(val) > 0 {
+		clientIP = net.ParseIP(val)
+	}
+
+	// Otherwise we need to check both list of IPs and IP ranges.
+	if sliceContains(whiteListedIPs, clientIP) {
+		c.Next()
+		return
+	}
+
+	for _, ipRange := range whiteListedIPRanges {
+		if ipRange.Contains(clientIP) {
+			c.Next()
+			return
+		}
+	}
+
+	// If the client's IP address was not found in the whitelisted IPs, then we should deny access.
+	c.AbortWithStatus(400)
+}
 
 // https://github.com/allegro/bigcache
 
@@ -26,7 +60,7 @@ func GetDomainInformation(hostname string) ([]*IPRecord, error) {
 	// Is this a valid domain name?
 	if !govalidator.IsDNSName(hostname) {
 		// Make sure the request is valid.
-		return records, errors.New("Invalid input")
+		return records, errors.New("invalid input")
 	}
 
 	// Perform a DNS lookup.
@@ -127,6 +161,8 @@ func main() {
 	domainPtr := flag.String("domain", "", "A domain name")
 	ipPtr := flag.String("ip", "", "An IP address")
 	shouldServe := flag.Bool("serve", false, "Run the HTTP server")
+	serveIP := flag.String("sip", "127.0.0.1", "The IP to serve on (127.0.0.1 will make it accessible only from localhost)")
+	whitelist := flag.String("whitelist", "", "If specified, it will only allow (only used with -serve)")
 
 	flag.Parse()
 
@@ -148,13 +184,33 @@ func main() {
 	defer asnMmdb.Close()
 
 	if *shouldServe {
+		if len(*whitelist) > 0 {
+			file, err := os.Open(*whitelist)
+
+			if err != nil {
+				fmt.Println("Unable to open the specified whitelist file")
+				os.Exit(1)
+			}
+
+			defer file.Close()
+			whiteListedIPRanges, whiteListedIPs, err = ParseIPList(file)
+
+			if err != nil {
+				fmt.Println("Error while parsing the whitelist", err)
+				os.Exit(1)
+			}
+
+			hasWhitelist = true
+		}
+
 		// Run a server exposing two endpoints that are query-able.
 		r := gin.Default()
+		r.Use(middleware)
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
 		r.GET("/api/domain/info/:hostname", DomainHandler)
 		r.NoRoute(NotFoundHandler)
 
-		http.ListenAndServe("127.0.0.1:8228", r)
+		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
 	} else if *domainPtr != "" {
 		// Grab the domain information.
 		recs, _ := GetDomainInformation(*domainPtr)

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"net"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -21,4 +23,37 @@ func IsValidIP(ipAddress string) bool {
 	}
 
 	return IsIPv6(ipAddress)
+}
+
+// ParseIPList parses a list of IP addresses and CIDR ranges into two lists which could be used
+// as a whitelist or blacklist.
+func ParseIPList(file *os.File) ([]*net.IPNet, []net.IP, error) {
+	scanner := bufio.NewScanner(file)
+	ipRanges := []*net.IPNet{}
+	ipAddresses := []net.IP{
+		net.ParseIP("127.0.0.1"),
+	}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		isCidrRange := strings.Contains(line, "/")
+
+		if isCidrRange {
+			_, ipRange, err := net.ParseCIDR(line)
+
+			if err != nil {
+				return nil, nil, err
+			}
+
+			ipRanges = append(ipRanges, ipRange)
+		} else {
+			ipAddresses = append(ipAddresses, net.ParseIP(line))
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	return ipRanges, ipAddresses, nil
 }
