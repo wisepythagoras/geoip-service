@@ -33,6 +33,7 @@ Usage of ./geoip-service:
 # To serve on a specific iface.
 ./geoip-service -serve -sip 0.0.0.0
 
-# You can also add a whitelist of IPs to allow to access the API and a custom list of DNS servers to query.
+# You can also add a whitelist of IPs to allow to access the API and a custom list of
+# DNS servers to query.
 ./geoip-service -serve -whitelist ./whitelist -sip 0.0.0.0 -dns-servers ./dns_servers
 ```
