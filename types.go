@@ -25,3 +25,8 @@ type MultiApiResponse struct {
 	Status  string      `json:"status"`
 	Records []*IPRecord `json:"records"`
 }
+
+type DNSApiResponse struct {
+	Success bool     `json:"success"`
+	Servers []string `json:"servers"`
+}

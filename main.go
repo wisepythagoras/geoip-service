@@ -155,6 +155,20 @@ func DomainHandler(c *gin.Context) {
 	c.JSON(200, response)
 }
 
+func DNSServers(c *gin.Context) {
+	response := &DNSApiResponse{
+		Success: true,
+	}
+
+	if len(dnsServerList) > 0 {
+		response.Servers = dnsServerList
+	} else {
+		response.Servers = defaultDNSServers
+	}
+
+	c.JSON(200, response)
+}
+
 func NotFoundHandler(c *gin.Context) {
 	c.Status(404)
 }
@@ -242,6 +256,7 @@ func main() {
 
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
 		r.GET("/api/domain/info/:hostname", DomainHandler)
+		r.GET("/api/dns_servers")
 		r.NoRoute(NotFoundHandler)
 
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
