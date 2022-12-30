@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/oschwald/maxminddb-golang"
 )
@@ -165,6 +166,7 @@ func main() {
 	serveIP := flag.String("sip", "127.0.0.1", "The IP to serve on (127.0.0.1 will make it accessible only from localhost)")
 	whitelist := flag.String("whitelist", "", "If specified, it will only allow (only used with -serve)")
 	dnsServers := flag.String("dns-servers", "", "The list of DNS servers. If not specified defaults to Cloudflare, Google, and OpenDNS")
+	publicFolder := flag.String("pub-dir", "", "Specify the location of the public folder (to serve a front end)")
 
 	flag.Parse()
 
@@ -224,7 +226,20 @@ func main() {
 
 		// Run a server exposing two endpoints that are query-able.
 		r := gin.Default()
+
 		r.Use(middleware)
+
+		if len(*publicFolder) > 0 {
+			if !fileExists(*publicFolder) {
+				fmt.Println("The provided public folder doesn't exist")
+				os.Exit(1)
+			}
+
+			// Add a public folder, if one was specified. This is available so that a you can run
+			// a front end application, instead of using it just as an API.
+			r.Use(static.Serve("/", static.LocalFile(*publicFolder, false)))
+		}
+
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
 		r.GET("/api/domain/info/:hostname", DomainHandler)
 		r.NoRoute(NotFoundHandler)
