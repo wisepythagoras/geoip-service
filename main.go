@@ -21,6 +21,7 @@ var err error
 var whiteListedIPRanges []*net.IPNet
 var whiteListedIPs []net.IP
 var hasWhitelist = false
+var dnsServerList = []string{}
 
 func middleware(c *gin.Context) {
 	// If there was no whitelist specified, then we can proceed.
@@ -64,7 +65,7 @@ func GetDomainInformation(hostname string) ([]*IPRecord, error) {
 	}
 
 	// Perform a DNS lookup.
-	ips, _ := DNSLookup(hostname)
+	ips, _ := DNSLookup(hostname, dnsServerList)
 
 	for i := 0; i < len(ips); i++ {
 		// Get the information on the current IP.
@@ -163,6 +164,7 @@ func main() {
 	shouldServe := flag.Bool("serve", false, "Run the HTTP server")
 	serveIP := flag.String("sip", "127.0.0.1", "The IP to serve on (127.0.0.1 will make it accessible only from localhost)")
 	whitelist := flag.String("whitelist", "", "If specified, it will only allow (only used with -serve)")
+	dnsServers := flag.String("dns-servers", "", "The list of DNS servers. If not specified defaults to Cloudflare, Google, and OpenDNS")
 
 	flag.Parse()
 
@@ -182,6 +184,23 @@ func main() {
 
 	defer cityMmdb.Close()
 	defer asnMmdb.Close()
+
+	if len(*dnsServers) > 0 {
+		file, err := os.Open(*dnsServers)
+
+		if err != nil {
+			fmt.Println("Unable to open the specified whitelist file")
+			os.Exit(1)
+		}
+
+		defer file.Close()
+		dnsServerList, err = ParseDNSServerList(file)
+
+		if err != nil {
+			fmt.Println("Error while reading the DNS server list file")
+			os.Exit(1)
+		}
+	}
 
 	if *shouldServe {
 		if len(*whitelist) > 0 {

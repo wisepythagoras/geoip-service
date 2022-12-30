@@ -5,3 +5,4 @@ GeoLite2-*_*/
 GeoLite2*.gz
 *.tar.xz
 whitelist
+dns_servers

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"os"
 	"reflect"
@@ -57,4 +58,30 @@ func ParseIPList(file *os.File) ([]*net.IPNet, []net.IP, error) {
 	}
 
 	return ipRanges, ipAddresses, nil
+}
+
+// ParseDNSServerList parses a file which has a DNS server on each line. The format is:
+// 1.1.1.1:53 for the DNS server. Comments are allowed on the same line preceeded by #.
+func ParseDNSServerList(file *os.File) ([]string, error) {
+	scanner := bufio.NewScanner(file)
+	dnsServerList := []string{}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		re := regexp.MustCompile(`(#[\s\S]+)`)
+		line = strings.Trim(re.ReplaceAllLiteralString(line, ""), " ")
+
+		if len(line) == 0 {
+			continue
+		}
+
+		if !strings.Contains(line, ":") {
+			line = fmt.Sprintf("%s:53", line)
+		}
+
+		dnsServerList = append(dnsServerList, line)
+	}
+
+	return dnsServerList, nil
 }
