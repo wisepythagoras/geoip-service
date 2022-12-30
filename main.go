@@ -256,7 +256,7 @@ func main() {
 
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
 		r.GET("/api/domain/info/:hostname", DomainHandler)
-		r.GET("/api/dns_servers")
+		r.GET("/api/dns_servers", DNSServers)
 		r.NoRoute(NotFoundHandler)
 
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
