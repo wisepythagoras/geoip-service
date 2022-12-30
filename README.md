@@ -4,11 +4,9 @@ A GeoIP service that can be a REST API or command line tool.
 
 ## Building
 
-``` sh
-go get github.com/oschwald/maxminddb-golang \
-    github.com/gorilla/mux \
-    github.com/asaskevich/govalidator
+The only dependencies that this app has are [Gin](https://github.com/gin-gonic/gin), for setting up a webserver, and [govalidator](github.com/asaskevich/govalidator), for validating input.
 
+``` sh
 go build .
 ```
 
@@ -31,4 +29,10 @@ Usage of ./geoip-service:
 
 # To run the HTTP API.
 ./geoip-service -serve
+
+# To serve on a specific iface.
+./geoip-service -serve -sip 0.0.0.0
+
+# You can also add a whitelist of IPs to allow to access the API and a custom list of DNS servers to query.
+./geoip-service -serve -whitelist ./whitelist -sip 0.0.0.0 -dns-servers ./dns_servers
 ```
