@@ -14,12 +14,20 @@ go build .
 
 ```
 Usage of ./geoip-service:
+  -dns-servers string
+        The list of DNS servers. If not specified defaults to Cloudflare, Google, and OpenDNS
   -domain string
-    	A domain name
+        A domain name
   -ip string
-    	An IP address
+        An IP address
+  -pub-dir string
+        Specify the location of the public folder (to serve a front end)
   -serve
-    	Run the HTTP server
+        Run the HTTP server
+  -sip string
+        The IP to serve on (127.0.0.1 will make it accessible only from localhost) (default "127.0.0.1")
+  -whitelist string
+        If specified, it will only allow (only used with -serve)
 ```
 
 ``` sh
