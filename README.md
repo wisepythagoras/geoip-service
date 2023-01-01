@@ -45,3 +45,5 @@ Usage of ./geoip-service:
 # DNS servers to query.
 ./geoip-service -serve -whitelist ./whitelist -sip 0.0.0.0 -dns-servers ./dns_servers
 ```
+
+The `-pub-dir` flag can be used to specify a front end application that calls all the APIs. There's an example of this in the [geoip-service-fe](https://github.com/wisepythagoras/geoip-service-fe) repository.
