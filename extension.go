@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	js "github.com/dop251/goja"
 	"github.com/gin-gonic/gin"
@@ -58,6 +60,9 @@ func (e *Extension) Init() error {
 
 	consoleObj := jsapi.Console{VM: e.vm}
 	consoleObj.Create()
+
+	fetchFn := jsapi.Fetch{VM: e.vm}
+	fetchFn.Create()
 
 	_, err = e.vm.RunScript(e.dir.Name(), string(bytes))
 
@@ -115,17 +120,29 @@ func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) boo
 	endpoint := filepath.Join("/api", details.Endpoint)
 
 	endpointHandler := func(c *gin.Context) {
+		// We need a wait group because the JS VM may run an async handler and if we
+		// don't wait here gin will exit the endpointHandler function and return a
+		// 200 by default.
+		wg := new(sync.WaitGroup)
+
 		req := EndpointReq{
 			Param: c.Param,
 		}
 		res := EndpointRes{
-			JSON: c.JSON,
+			JSON: func(status int, resp any) {
+				c.JSON(status, resp)
+				wg.Done()
+			},
 			Abort: func(status int, err string) {
+				fmt.Println("Aborting", status)
 				c.AbortWithError(status, errors.New(err))
+				wg.Done()
 			},
 		}
 
+		wg.Add(1)
 		handler(req, res)
+		wg.Wait()
 	}
 
 	if details.Method == "GET" {
