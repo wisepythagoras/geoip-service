@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -94,4 +95,51 @@ func fileExists(path string) bool {
 	}
 
 	return true
+}
+
+func parseExtensions(path string) ([]*Extension, error) {
+	files, err := os.ReadDir(path)
+	extensions := []*Extension{}
+
+	if err != nil {
+		return extensions, err
+	}
+
+	for _, f := range files {
+		if !f.IsDir() {
+			break
+		}
+
+		extFiles, err := os.ReadDir(filepath.Join(path, f.Name()))
+
+		if err != nil {
+			return extensions, err
+		}
+
+		var entry os.DirEntry = nil
+
+		for _, extFile := range extFiles {
+			if extFile.IsDir() {
+				continue
+			}
+
+			if extFile.Name() == "index.js" {
+				entry = extFile
+			}
+		}
+
+		if entry == nil {
+			return extensions, fmt.Errorf("Extension folder %q doesn't have an entry point (index.js)", f.Name())
+		}
+
+		extension := &Extension{
+			extDir: path,
+			dir:    f,
+			entry:  entry,
+		}
+
+		extensions = append(extensions, extension)
+	}
+
+	return extensions, nil
 }
