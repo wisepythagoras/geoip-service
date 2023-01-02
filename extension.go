@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -134,7 +133,6 @@ func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) boo
 				wg.Done()
 			},
 			Abort: func(status int, err string) {
-				fmt.Println("Aborting", status)
 				c.AbortWithError(status, errors.New(err))
 				wg.Done()
 			},
