@@ -113,7 +113,7 @@ func GetIPInformation(hostname string) (*IPRecord, error) {
 
 func IPAddressHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
-	response := &ApiResponse{}
+	response := &IPApiResponse{}
 	response.Record = nil
 
 	// Is this a valid IP address?
@@ -181,6 +181,7 @@ func main() {
 	whitelist := flag.String("whitelist", "", "If specified, it will only allow (only used with -serve)")
 	dnsServers := flag.String("dns-servers", "", "The list of DNS servers. If not specified defaults to Cloudflare, Google, and OpenDNS")
 	publicFolder := flag.String("pub-dir", "", "Specify the location of the public folder (to serve a front end)")
+	extFolder := flag.String("ext-dir", "", "Specify the location of the folder containing the extensions")
 
 	flag.Parse()
 
@@ -200,6 +201,26 @@ func main() {
 
 	defer cityMmdb.Close()
 	defer asnMmdb.Close()
+
+	var extensions []*Extension
+
+	if len(*extFolder) > 0 {
+		extensions, err = parseExtensions(*extFolder)
+
+		if err != nil {
+			fmt.Println("Load error:", err)
+			os.Exit(1)
+		}
+
+		for _, e := range extensions {
+			err = e.Init()
+
+			if err != nil {
+				fmt.Println("Init error:", err)
+				os.Exit(1)
+			}
+		}
+	}
 
 	if len(*dnsServers) > 0 {
 		file, err := os.Open(*dnsServers)
@@ -257,6 +278,16 @@ func main() {
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
 		r.GET("/api/domain/info/:hostname", DomainHandler)
 		r.GET("/api/dns_servers", DNSServers)
+
+		// Register any endpoint extensions.
+		for _, ext := range extensions {
+			if !ext.IsEndpointExtension() {
+				continue
+			}
+
+			ext.RegisterEndpoints(r)
+		}
+
 		r.NoRoute(NotFoundHandler)
 
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)

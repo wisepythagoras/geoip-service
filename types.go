@@ -21,6 +21,12 @@ type IPRecord struct {
 }
 
 type ApiResponse struct {
+	Success bool   `json:"success"`
+	Status  string `json:"status"`
+	Data    any    `json:"data"`
+}
+
+type IPApiResponse struct {
 	Success bool      `json:"success"`
 	Status  string    `json:"status"`
 	Record  *IPRecord `json:"record"`
