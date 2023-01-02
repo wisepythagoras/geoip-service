@@ -41,41 +41,44 @@ func (f *Fetch) fetchFn(call js.FunctionCall) js.Value {
 	fmt.Println(options.Method)
 
 	go func() {
+		var resp *http.Response
+		var err error
+
 		if options.Method == "GET" {
-			resp, err := http.Get(url)
-
-			if err != nil {
-				reject(err.Error())
-				return
-			}
-
-			defer resp.Body.Close()
-			body, _ := io.ReadAll(resp.Body)
-
-			fetchResponse := FetchResponse{
-				JSON: func(call js.FunctionCall) js.Value {
-					promise, resolve, reject := f.VM.NewPromise()
-
-					var obj interface{}
-					err := json.Unmarshal(body, &obj)
-
-					if err != nil {
-						reject(err.Error())
-					} else {
-						resolve(obj)
-					}
-
-					return f.VM.ToValue(promise)
-				},
-				Text: func(call js.FunctionCall) js.Value {
-					promise, resolve, _ := f.VM.NewPromise()
-					resolve(string(body))
-					return f.VM.ToValue(promise)
-				},
-			}
-
-			resolve(fetchResponse)
+			resp, err = http.Get(url)
 		}
+
+		if err != nil {
+			reject(err.Error())
+			return
+		}
+
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+
+		fetchResponse := FetchResponse{
+			JSON: func(call js.FunctionCall) js.Value {
+				promise, resolve, reject := f.VM.NewPromise()
+
+				var obj interface{}
+				err := json.Unmarshal(body, &obj)
+
+				if err != nil {
+					reject(err.Error())
+				} else {
+					resolve(obj)
+				}
+
+				return f.VM.ToValue(promise)
+			},
+			Text: func(call js.FunctionCall) js.Value {
+				promise, resolve, _ := f.VM.NewPromise()
+				resolve(string(body))
+				return f.VM.ToValue(promise)
+			},
+		}
+
+		resolve(fetchResponse)
 	}()
 
 	return f.VM.ToValue(promise)
