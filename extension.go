@@ -9,7 +9,7 @@ import (
 	js "github.com/dop251/goja"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
-	jsapi "github.com/wisepythagoras/geoip-service/js_api"
+	"github.com/wisepythagoras/geoip-service/jsapi"
 )
 
 type EndpointReq struct {
