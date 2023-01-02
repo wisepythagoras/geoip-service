@@ -2,12 +2,15 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	js "github.com/dop251/goja"
 	"github.com/gin-gonic/gin"
+	"github.com/go-co-op/gocron"
 	"github.com/mitchellh/mapstructure"
 	"github.com/wisepythagoras/geoip-service/jsapi"
 )
@@ -27,10 +30,16 @@ type EndpointDetails struct {
 	Handler  string `json:"handler"`
 }
 
+type CronJob struct {
+	Cron string `json:"cron"`
+	Job  string `json:"job"`
+}
+
 type ExtensionConfig struct {
-	Type    string `json:"type"`
-	Version int    `json:"version"`
-	Details any    `json:"details"`
+	Type    string    `json:"type"`
+	Version int       `json:"version"`
+	Details any       `json:"details"`
+	Jobs    []CronJob `json:"jobs"`
 }
 
 type InstallFn func() ExtensionConfig
@@ -43,6 +52,7 @@ type Extension struct {
 	vm            *js.Runtime
 	extType       string
 	configDetails any
+	scheduler     *gocron.Scheduler
 }
 
 // Init will spin up the JS VM and run the script.
@@ -81,6 +91,22 @@ func (e *Extension) Init() error {
 	res := installFn()
 	e.extType = res.Type
 	e.configDetails = res.Details
+
+	e.scheduler = gocron.NewScheduler(time.UTC)
+
+	for _, job := range res.Jobs {
+		var jobHandler func()
+		err = e.vm.ExportTo(e.vm.Get(job.Job), &jobHandler)
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Registering", job.Cron, job.Job)
+		e.scheduler.Cron(job.Cron).Do(jobHandler)
+	}
+
+	e.scheduler.StartAsync()
 
 	return nil
 }
