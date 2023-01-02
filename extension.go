@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 	js "github.com/dop251/goja"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
+	jsapi "github.com/wisepythagoras/geoip-service/js_api"
 )
 
 type EndpointReq struct {
@@ -15,7 +17,8 @@ type EndpointReq struct {
 }
 
 type EndpointRes struct {
-	Send func(status int, resp ApiResponse) `json:"send"`
+	JSON  func(status int, resp any)   `json:"json"`
+	Abort func(status int, err string) `json:"abort"`
 }
 
 type EndpointDetails struct {
@@ -54,15 +57,8 @@ func (e *Extension) Init() error {
 		return err
 	}
 
-	e.vm.Set("log", func(call js.FunctionCall) js.Value {
-		for _, arg := range call.Arguments {
-			fmt.Print(arg.String())
-		}
-
-		fmt.Println()
-
-		return js.Undefined()
-	})
+	consoleObj := jsapi.Console{VM: e.vm}
+	consoleObj.Create()
 
 	_, err = e.vm.RunScript(e.dir.Name(), string(bytes))
 
@@ -124,8 +120,9 @@ func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) boo
 			Param: c.Param,
 		}
 		res := EndpointRes{
-			Send: func(status int, resp ApiResponse) {
-				c.JSON(status, resp)
+			JSON: c.JSON,
+			Abort: func(status int, err string) {
+				c.AbortWithError(status, errors.New(err))
 			},
 		}
 
