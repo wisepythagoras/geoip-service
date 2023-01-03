@@ -99,7 +99,7 @@ func (s *Storage) readFile(call js.FunctionCall) js.Value {
 	promise, resolve, reject := s.VM.NewPromise()
 	fileName := call.Argument(0).String()
 
-	contents, err := os.ReadFile(fileName)
+	contents, err := os.ReadFile(filepath.Join(s.DataDir, fileName))
 
 	if err != nil {
 		reject(err.Error())

@@ -71,14 +71,18 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 		return ip.VM.ToValue(obj.IP.DefaultMask().String())
 	})
 	inst.Set("contains", func(call js.FunctionCall) js.Value {
-		if !isCidrRange || len(call.Arguments) < 1 {
+		if len(call.Arguments) < 1 {
 			return ip.VM.ToValue(false)
 		}
 
 		ipAddress := call.Argument(0).String()
-		netIP := net.ParseIP(ipAddress)
+		netIPAddress := net.ParseIP(ipAddress)
 
-		return ip.VM.ToValue(ipRange.Contains(netIP))
+		if !isCidrRange {
+			return ip.VM.ToValue(netIPAddress.Equal(netIP))
+		} else {
+			return ip.VM.ToValue(ipRange.Contains(netIPAddress))
+		}
 	})
 
 	// inst.Set("inc", func(call js.FunctionCall) js.Value {
