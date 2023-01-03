@@ -3,12 +3,14 @@ package jsapi
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	js "github.com/dop251/goja"
 )
 
 type ipObj struct {
-	IP net.IP
+	IP      net.IP
+	IPRange *net.IPNet
 }
 
 type JSIP struct {
@@ -29,16 +31,33 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 		return nil
 	}
 
-	ipAddress := call.Argument(0)
-	inst := ip.VM.CreateObject(ip.Proto)
-	fmt.Println(ipAddress)
+	ipAddress := call.Argument(0).String()
+	isCidrRange := strings.Contains(ipAddress, "/")
 
-	obj := ipObj{
-		IP: net.ParseIP(ipAddress.String()),
+	var netIP net.IP
+	var ipRange *net.IPNet
+	var err error
+
+	if isCidrRange {
+		netIP, ipRange, err = net.ParseCIDR(ipAddress)
+	} else {
+		netIP = net.ParseIP(ipAddress)
 	}
 
+	if err != nil {
+		ip.VM.Interrupt(err)
+		return nil
+	}
+
+	obj := ipObj{
+		IP:      netIP,
+		IPRange: ipRange,
+	}
+
+	inst := ip.VM.CreateObject(ip.Proto)
 	inst.Set("ip", ipAddress)
 	inst.Set("isValid", obj.IP != nil)
+	inst.Set("isCIDRRange", isCidrRange && ipRange != nil)
 	inst.Set("isLoopback", func(_ js.FunctionCall) js.Value {
 		return ip.VM.ToValue(obj.IP.IsLoopback())
 	})
@@ -50,6 +69,16 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 	})
 	inst.Set("getMask", func(_ js.FunctionCall) js.Value {
 		return ip.VM.ToValue(obj.IP.DefaultMask().String())
+	})
+	inst.Set("contains", func(call js.FunctionCall) js.Value {
+		if !isCidrRange || len(call.Arguments) < 1 {
+			return ip.VM.ToValue(false)
+		}
+
+		ipAddress := call.Argument(0).String()
+		netIP := net.ParseIP(ipAddress)
+
+		return ip.VM.ToValue(ipRange.Contains(netIP))
 	})
 
 	// inst.Set("inc", func(call js.FunctionCall) js.Value {
