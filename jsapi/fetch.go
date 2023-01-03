@@ -2,7 +2,6 @@ package jsapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -38,7 +37,6 @@ func (f *Fetch) fetchFn(call js.FunctionCall) js.Value {
 	f.VM.ExportTo(call.Argument(1), &options)
 
 	promise, resolve, reject := f.VM.NewPromise()
-	fmt.Println(options.Method)
 
 	go func() {
 		var resp *http.Response

@@ -32,7 +32,7 @@ func ParseIPList(file *os.File) ([]*net.IPNet, []net.IP, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		re := regexp.MustCompile(`(#[\s\S]+)`)
+		re := regexp.MustCompile(`(#(?:[^\n]+)?)`)
 		line = strings.Trim(re.ReplaceAllLiteralString(line, ""), " ")
 
 		if len(line) == 0 {
@@ -70,7 +70,7 @@ func ParseDNSServerList(file *os.File) ([]string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		re := regexp.MustCompile(`(#[\s\S]+)`)
+		re := regexp.MustCompile(`(#(?:[^\n]+)?)`)
 		line = strings.Trim(re.ReplaceAllLiteralString(line, ""), " ")
 
 		if len(line) == 0 {

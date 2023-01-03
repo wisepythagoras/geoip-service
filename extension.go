@@ -67,11 +67,16 @@ func (e *Extension) Init() error {
 		return err
 	}
 
+	// Add all the APIs to the VM's runtime.
+
 	consoleObj := jsapi.Console{VM: e.vm}
 	consoleObj.Create()
 
 	fetchFn := jsapi.Fetch{VM: e.vm}
 	fetchFn.Create()
+
+	jsIPObj := jsapi.JSIP{VM: e.vm}
+	jsIPObj.Init()
 
 	_, err = e.vm.RunScript(e.dir.Name(), string(bytes))
 

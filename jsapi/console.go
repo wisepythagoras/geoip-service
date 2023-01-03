@@ -25,14 +25,8 @@ func (c *Console) Create() {
 }
 
 func (c *Console) Log(call js.FunctionCall) js.Value {
-	argc := len(call.Arguments)
-
-	for i, arg := range call.Arguments {
-		fmt.Print(arg)
-
-		if i != argc-1 {
-			fmt.Print(" ")
-		}
+	for _, arg := range call.Arguments {
+		fmt.Print(arg, " ")
 	}
 
 	fmt.Println()
