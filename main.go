@@ -23,6 +23,7 @@ var whiteListedIPRanges []*net.IPNet
 var whiteListedIPs []net.IP
 var hasWhitelist = false
 var dnsServerList = []string{}
+var extensions []*Extension
 
 func middleware(c *gin.Context) {
 	// If there was no whitelist specified, then we can proceed.
@@ -56,13 +57,14 @@ func middleware(c *gin.Context) {
 
 // https://github.com/allegro/bigcache
 
-func GetDomainInformation(hostname string) ([]*IPRecord, error) {
+func GetDomainInformation(hostname string) ([]*IPRecord, []any, error) {
 	var records []*IPRecord = []*IPRecord{}
+	var additionalData []any = []any{}
 
 	// Is this a valid domain name?
 	if !govalidator.IsDNSName(hostname) {
 		// Make sure the request is valid.
-		return records, errors.New("invalid input")
+		return records, additionalData, errors.New("invalid input")
 	}
 
 	// Perform a DNS lookup.
@@ -70,7 +72,7 @@ func GetDomainInformation(hostname string) ([]*IPRecord, error) {
 
 	for i := 0; i < len(ips); i++ {
 		// Get the information on the current IP.
-		info, err := GetIPInformation(ips[i].String())
+		info, addlData, err := GetIPInformation(ips[i].String())
 
 		if err != nil {
 			continue
@@ -78,12 +80,13 @@ func GetDomainInformation(hostname string) ([]*IPRecord, error) {
 
 		// Append the record to the array.
 		records = append(records, info)
+		additionalData = append(additionalData, addlData...)
 	}
 
-	return records, nil
+	return records, additionalData, nil
 }
 
-func GetIPInformation(hostname string) (*IPRecord, error) {
+func GetIPInformation(hostname string) (*IPRecord, []any, error) {
 	// If you are using strings that may be invalid, check that ip is not nil.
 	ip := net.ParseIP(hostname)
 
@@ -95,7 +98,7 @@ func GetIPInformation(hostname string) (*IPRecord, error) {
 
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Lookup the IP details from the ASN database.
@@ -103,18 +106,34 @@ func GetIPInformation(hostname string) (*IPRecord, error) {
 
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
+	}
+
+	var addlData []any
+
+	for _, ext := range extensions {
+		if !ext.IsLookupExtension() {
+			continue
+		}
+
+		// Here we query the extension for information on the queried IP address. This data will
+		// be added on to the response payload in the end as additional information.
+		data, _ := ext.RunIPLookup(ip.String())
+
+		if data != nil {
+			addlData = append(addlData, data)
+		}
 	}
 
 	rec.IPAddress = hostname
 
-	return rec, nil
+	return rec, addlData, nil
 }
 
 func IPAddressHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
 	response := &ApiResponse{}
-	response.Record = nil
+	response.Data = nil
 
 	// Is this a valid IP address?
 	if !IsValidIP(hostname) {
@@ -130,7 +149,7 @@ func IPAddressHandler(c *gin.Context) {
 	response.Status = "Retrieved"
 
 	// Get the IP information for this.
-	response.Record, err = GetIPInformation(hostname)
+	response.Data, response.AddlData, err = GetIPInformation(hostname)
 
 	if err != nil {
 		response.Status = err.Error()
@@ -141,8 +160,8 @@ func IPAddressHandler(c *gin.Context) {
 
 func DomainHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
-	response := &MultiApiResponse{}
-	response.Records, err = GetDomainInformation(hostname)
+	response := &ApiResponse{}
+	response.Data, response.AddlData, err = GetDomainInformation(hostname)
 
 	if err == nil {
 		response.Success = true
@@ -181,6 +200,7 @@ func main() {
 	whitelist := flag.String("whitelist", "", "If specified, it will only allow (only used with -serve)")
 	dnsServers := flag.String("dns-servers", "", "The list of DNS servers. If not specified defaults to Cloudflare, Google, and OpenDNS")
 	publicFolder := flag.String("pub-dir", "", "Specify the location of the public folder (to serve a front end)")
+	extFolder := flag.String("ext-dir", "", "Specify the location of the folder containing the extensions")
 
 	flag.Parse()
 
@@ -200,6 +220,24 @@ func main() {
 
 	defer cityMmdb.Close()
 	defer asnMmdb.Close()
+
+	if len(*extFolder) > 0 {
+		extensions, err = parseExtensions(*extFolder)
+
+		if err != nil {
+			fmt.Println("Load error:", err)
+			os.Exit(1)
+		}
+
+		for _, e := range extensions {
+			err = e.Init()
+
+			if err != nil {
+				fmt.Println("Init error:", err)
+				os.Exit(1)
+			}
+		}
+	}
 
 	if len(*dnsServers) > 0 {
 		file, err := os.Open(*dnsServers)
@@ -257,17 +295,27 @@ func main() {
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
 		r.GET("/api/domain/info/:hostname", DomainHandler)
 		r.GET("/api/dns_servers", DNSServers)
+
+		// Register any endpoint extensions.
+		for _, ext := range extensions {
+			if !ext.IsEndpointExtension() {
+				continue
+			}
+
+			ext.RegisterEndpoints(r)
+		}
+
 		r.NoRoute(NotFoundHandler)
 
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
 	} else if *domainPtr != "" {
 		// Grab the domain information.
-		recs, _ := GetDomainInformation(*domainPtr)
+		recs, _, _ := GetDomainInformation(*domainPtr)
 		obj, _ := json.Marshal(recs)
 		fmt.Println(string(obj))
 	} else if *ipPtr != "" {
 		// Grab the information about the sole IP address.
-		rec, _ := GetIPInformation(*ipPtr)
+		rec, _, _ := GetIPInformation(*ipPtr)
 		obj, _ := json.Marshal(rec)
 		fmt.Println(string(obj))
 	} else {
