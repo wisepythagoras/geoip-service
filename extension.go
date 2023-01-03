@@ -11,7 +11,6 @@ import (
 	js "github.com/dop251/goja"
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron"
-	"github.com/mitchellh/mapstructure"
 	"github.com/wisepythagoras/geoip-service/jsapi"
 )
 
@@ -36,23 +35,21 @@ type CronJob struct {
 }
 
 type ExtensionConfig struct {
-	Type    string    `json:"type"`
-	Version int       `json:"version"`
-	Details any       `json:"details"`
-	Jobs    []CronJob `json:"jobs"`
+	Version   int               `json:"version"`
+	Endpoints []EndpointDetails `json:"endpoints"`
+	Jobs      []CronJob         `json:"jobs"`
 }
 
 type InstallFn func() ExtensionConfig
 type HandlerFn func(req EndpointReq, res EndpointRes)
 
 type Extension struct {
-	extDir        string
-	dir           os.DirEntry
-	entry         os.DirEntry
-	vm            *js.Runtime
-	extType       string
-	configDetails any
-	scheduler     *gocron.Scheduler
+	extDir    string
+	dir       os.DirEntry
+	entry     os.DirEntry
+	vm        *js.Runtime
+	endpoints []EndpointDetails
+	scheduler *gocron.Scheduler
 }
 
 // Init will spin up the JS VM and run the script.
@@ -103,8 +100,7 @@ func (e *Extension) Init() error {
 	}
 
 	res := installFn()
-	e.extType = res.Type
-	e.configDetails = res.Details
+	e.endpoints = res.Endpoints
 
 	e.scheduler = gocron.NewScheduler(time.UTC)
 
@@ -127,11 +123,7 @@ func (e *Extension) Init() error {
 
 // IsEndpointExtension returns true if this extension defines an endpoint.
 func (e *Extension) IsEndpointExtension() bool {
-	if len(e.extType) == 0 {
-		return false
-	}
-
-	return e.extType == "endpoint"
+	return len(e.endpoints) > 0
 }
 
 // RegisterEndpoints will go through all of the endpoints and register them with gin.
@@ -140,10 +132,7 @@ func (e *Extension) RegisterEndpoints(r *gin.Engine) bool {
 		return false
 	}
 
-	var details []EndpointDetails
-	mapstructure.Decode(e.configDetails, &details)
-
-	for _, d := range details {
+	for _, d := range e.endpoints {
 		if !e.registerEndpoint(r, d) {
 			return false
 		}
