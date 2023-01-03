@@ -85,11 +85,5 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 		}
 	})
 
-	// inst.Set("inc", func(call js.FunctionCall) js.Value {
-	// 	obj.Val += 1
-	// 	inst.Set("val", obj.Val)
-	// 	return js.Undefined()
-	// })
-
 	return inst
 }
