@@ -36,6 +36,7 @@ type CronJob struct {
 
 type ExtensionConfig struct {
 	Version   int               `json:"version"`
+	HasLookup bool              `json:"hasLookup"`
 	Endpoints []EndpointDetails `json:"endpoints"`
 	Jobs      []CronJob         `json:"jobs"`
 }
@@ -49,6 +50,7 @@ type Extension struct {
 	entry     os.DirEntry
 	vm        *js.Runtime
 	endpoints []EndpointDetails
+	hasLookup bool
 	scheduler *gocron.Scheduler
 }
 
@@ -101,6 +103,7 @@ func (e *Extension) Init() error {
 
 	res := installFn()
 	e.endpoints = res.Endpoints
+	e.hasLookup = res.HasLookup
 
 	e.scheduler = gocron.NewScheduler(time.UTC)
 
@@ -124,6 +127,12 @@ func (e *Extension) Init() error {
 // IsEndpointExtension returns true if this extension defines an endpoint.
 func (e *Extension) IsEndpointExtension() bool {
 	return len(e.endpoints) > 0
+}
+
+// IsLookupExtension returns true if this extension has lookup functions and should run
+// on IP or domain lookup.
+func (e *Extension) IsLookupExtension() bool {
+	return e.hasLookup
 }
 
 // RegisterEndpoints will go through all of the endpoints and register them with gin.
