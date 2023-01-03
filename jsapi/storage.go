@@ -18,6 +18,7 @@ func (s *Storage) Init() {
 	obj.Set("init", s.initStorage)
 	obj.Set("save", s.saveFile)
 	obj.Set("delete", s.deleteFile)
+	obj.Set("read", s.readFile)
 
 	s.VM.Set("storage", obj)
 }
@@ -85,6 +86,25 @@ func (s *Storage) deleteFile(call js.FunctionCall) js.Value {
 		reject(err.Error())
 	} else {
 		resolve(js.Undefined())
+	}
+
+	return s.VM.ToValue(promise)
+}
+
+func (s *Storage) readFile(call js.FunctionCall) js.Value {
+	if len(call.Arguments) < 1 {
+		return js.Undefined()
+	}
+
+	promise, resolve, reject := s.VM.NewPromise()
+	fileName := call.Argument(0).String()
+
+	contents, err := os.ReadFile(fileName)
+
+	if err != nil {
+		reject(err.Error())
+	} else {
+		resolve(string(contents))
 	}
 
 	return s.VM.ToValue(promise)
