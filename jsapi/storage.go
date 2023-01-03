@@ -15,11 +15,11 @@ type Storage struct {
 
 func (s *Storage) Init() {
 	obj := s.VM.NewObject()
-	obj.Set("new", s.initStorage)
+	obj.Set("init", s.initStorage)
 	obj.Set("save", s.saveFile)
 	obj.Set("delete", s.deleteFile)
 
-	s.VM.Set("Storage", obj)
+	s.VM.Set("storage", obj)
 }
 
 func (s *Storage) initStorage(_ js.FunctionCall) js.Value {
