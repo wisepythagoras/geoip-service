@@ -4,16 +4,16 @@ go 1.18
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
+	github.com/dop251/goja v0.0.0-20221229151140-b95230a9dbad
+	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.8.2
+	github.com/go-co-op/gocron v1.18.0
 	github.com/oschwald/maxminddb-golang v1.10.0
 )
 
 require (
 	github.com/dlclark/regexp2 v1.7.0 // indirect
-	github.com/dop251/goja v0.0.0-20221229151140-b95230a9dbad // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-contrib/static v0.0.1 // indirect
-	github.com/go-co-op/gocron v1.18.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
