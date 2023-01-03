@@ -10,22 +10,22 @@ import (
 )
 
 type IPObj struct {
-	ParseList func(call js.FunctionCall) js.Value `json:"parseList"`
+	Parse func(call js.FunctionCall) js.Value `json:"parse"`
 }
 
-type JSIP struct {
+type IPList struct {
 	VM *js.Runtime
 }
 
-func (ip *JSIP) Init() {
+func (ip *IPList) Init() {
 	ipObj := IPObj{
-		ParseList: ip.ParseList,
+		Parse: ip.Parse,
 	}
 
-	ip.VM.Set("IP", ipObj)
+	ip.VM.Set("IPList", ipObj)
 }
 
-func (ip *JSIP) ParseList(call js.FunctionCall) js.Value {
+func (ip *IPList) Parse(call js.FunctionCall) js.Value {
 	if len(call.Arguments) < 1 {
 		return js.Undefined()
 	}

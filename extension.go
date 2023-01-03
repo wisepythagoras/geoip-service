@@ -75,8 +75,8 @@ func (e *Extension) Init() error {
 	fetchFn := jsapi.Fetch{VM: e.vm}
 	fetchFn.Create()
 
-	jsIPObj := jsapi.JSIP{VM: e.vm}
-	jsIPObj.Init()
+	ipListObj := jsapi.IPList{VM: e.vm}
+	ipListObj.Init()
 
 	_, err = e.vm.RunScript(e.dir.Name(), string(bytes))
 
