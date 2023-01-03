@@ -78,6 +78,9 @@ func (e *Extension) Init() error {
 	ipListObj := jsapi.IPList{VM: e.vm}
 	ipListObj.Init()
 
+	ipObj := jsapi.JSIP{VM: e.vm}
+	ipObj.Init()
+
 	_, err = e.vm.RunScript(e.dir.Name(), string(bytes))
 
 	if err != nil {
