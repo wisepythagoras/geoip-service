@@ -9,7 +9,7 @@ import (
 	js "github.com/dop251/goja"
 )
 
-type IPObj struct {
+type ipListObj struct {
 	Parse func(call js.FunctionCall) js.Value `json:"parse"`
 }
 
@@ -18,11 +18,11 @@ type IPList struct {
 }
 
 func (ip *IPList) Init() {
-	ipObj := IPObj{
+	obj := ipListObj{
 		Parse: ip.Parse,
 	}
 
-	ip.VM.Set("IPList", ipObj)
+	ip.VM.Set("IPList", obj)
 }
 
 func (ip *IPList) Parse(call js.FunctionCall) js.Value {
