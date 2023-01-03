@@ -31,7 +31,7 @@ func (ip *IPList) Parse(call js.FunctionCall) js.Value {
 	}
 
 	promise, resolve, reject := ip.VM.NewPromise()
-	strList := call.Argument(0).ToString().String()
+	strList := call.Argument(0).String()
 
 	// Parses the list into a string array so that the JS engine will be able to interpret that.
 	list, err := parseSimpleIPList(strList)

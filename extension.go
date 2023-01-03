@@ -81,6 +81,12 @@ func (e *Extension) Init() error {
 	ipObj := jsapi.JSIP{VM: e.vm}
 	ipObj.Init()
 
+	storageObj := jsapi.Storage{
+		VM:      e.vm,
+		DataDir: filepath.Join(e.extDir, e.dir.Name(), ".store"),
+	}
+	storageObj.Init()
+
 	_, err = e.vm.RunScript(e.dir.Name(), string(bytes))
 
 	if err != nil {
