@@ -39,6 +39,18 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 
 	inst.Set("ip", ipAddress)
 	inst.Set("isValid", obj.IP != nil)
+	inst.Set("isLoopback", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsLoopback())
+	})
+	inst.Set("isPrivate", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsPrivate())
+	})
+	inst.Set("isUnspecified", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsUnspecified())
+	})
+	inst.Set("getMask", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.DefaultMask().String())
+	})
 
 	// inst.Set("inc", func(call js.FunctionCall) js.Value {
 	// 	obj.Val += 1
