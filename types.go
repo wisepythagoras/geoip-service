@@ -27,18 +27,6 @@ type ApiResponse struct {
 	AddlData []any  `json:"additional_data"`
 }
 
-type IPApiResponse struct {
-	Success bool      `json:"success"`
-	Status  string    `json:"status"`
-	Record  *IPRecord `json:"record"`
-}
-
-type MultiApiResponse struct {
-	Success bool        `json:"success"`
-	Status  string      `json:"status"`
-	Records []*IPRecord `json:"records"`
-}
-
 type DNSApiResponse struct {
 	Success bool     `json:"success"`
 	Servers []string `json:"servers"`
