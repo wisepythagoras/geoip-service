@@ -52,6 +52,7 @@ type Extension struct {
 	endpoints []EndpointDetails
 	hasLookup bool
 	scheduler *gocron.Scheduler
+	lookupFn  func(addr string) interface{}
 }
 
 // Init will spin up the JS VM and run the script.
@@ -105,6 +106,14 @@ func (e *Extension) Init() error {
 	e.endpoints = res.Endpoints
 	e.hasLookup = res.HasLookup
 
+	if e.hasLookup {
+		err = e.vm.ExportTo(e.vm.Get("lookupIP"), &e.lookupFn)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	e.scheduler = gocron.NewScheduler(time.UTC)
 
 	for _, job := range res.Jobs {
@@ -133,6 +142,15 @@ func (e *Extension) IsEndpointExtension() bool {
 // on IP or domain lookup.
 func (e *Extension) IsLookupExtension() bool {
 	return e.hasLookup
+}
+
+// RunIPLookup will query the extension for data on a particular IP address.
+func (e *Extension) RunIPLookup(ip string) (any, error) {
+	if !e.IsLookupExtension() || e.lookupFn == nil {
+		return nil, fmt.Errorf("this extension doesn't have lookup capabilities")
+	}
+
+	return e.lookupFn(ip), nil
 }
 
 // RegisterEndpoints will go through all of the endpoints and register them with gin.
