@@ -18,13 +18,13 @@ type IPRecord struct {
 	ASN       int    `maxminddb:"autonomous_system_number" json:"asn"`
 	Org       string `maxminddb:"autonomous_system_organization" json:"org"`
 	IPAddress string `json:"ip_address"`
+	AddlData  []any  `json:"additional_data"`
 }
 
 type ApiResponse struct {
-	Success  bool   `json:"success"`
-	Status   string `json:"status"`
-	Data     any    `json:"data"`
-	AddlData []any  `json:"additional_data"`
+	Success bool   `json:"success"`
+	Status  string `json:"status"`
+	Data    any    `json:"data"`
 }
 
 type DNSApiResponse struct {

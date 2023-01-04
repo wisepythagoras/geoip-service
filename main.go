@@ -57,14 +57,13 @@ func middleware(c *gin.Context) {
 
 // https://github.com/allegro/bigcache
 
-func GetDomainInformation(hostname string) ([]*IPRecord, []any, error) {
+func GetDomainInformation(hostname string) ([]*IPRecord, error) {
 	var records []*IPRecord = []*IPRecord{}
-	var additionalData []any = []any{}
 
 	// Is this a valid domain name?
 	if !govalidator.IsDNSName(hostname) {
 		// Make sure the request is valid.
-		return records, additionalData, errors.New("invalid input")
+		return records, errors.New("invalid input")
 	}
 
 	// Perform a DNS lookup.
@@ -72,7 +71,7 @@ func GetDomainInformation(hostname string) ([]*IPRecord, []any, error) {
 
 	for i := 0; i < len(ips); i++ {
 		// Get the information on the current IP.
-		info, addlData, err := GetIPInformation(ips[i].String())
+		info, err := GetIPInformation(ips[i].String())
 
 		if err != nil {
 			continue
@@ -80,13 +79,12 @@ func GetDomainInformation(hostname string) ([]*IPRecord, []any, error) {
 
 		// Append the record to the array.
 		records = append(records, info)
-		additionalData = append(additionalData, addlData...)
 	}
 
-	return records, additionalData, nil
+	return records, nil
 }
 
-func GetIPInformation(hostname string) (*IPRecord, []any, error) {
+func GetIPInformation(hostname string) (*IPRecord, error) {
 	// If you are using strings that may be invalid, check that ip is not nil.
 	ip := net.ParseIP(hostname)
 
@@ -98,7 +96,7 @@ func GetIPInformation(hostname string) (*IPRecord, []any, error) {
 
 	if err != nil {
 		log.Println(err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Lookup the IP details from the ASN database.
@@ -106,7 +104,7 @@ func GetIPInformation(hostname string) (*IPRecord, []any, error) {
 
 	if err != nil {
 		log.Println(err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	var addlData []any
@@ -126,8 +124,9 @@ func GetIPInformation(hostname string) (*IPRecord, []any, error) {
 	}
 
 	rec.IPAddress = hostname
+	rec.AddlData = addlData
 
-	return rec, addlData, nil
+	return rec, nil
 }
 
 func IPAddressHandler(c *gin.Context) {
@@ -149,7 +148,7 @@ func IPAddressHandler(c *gin.Context) {
 	response.Status = "Retrieved"
 
 	// Get the IP information for this.
-	response.Data, response.AddlData, err = GetIPInformation(hostname)
+	response.Data, err = GetIPInformation(hostname)
 
 	if err != nil {
 		response.Status = err.Error()
@@ -161,7 +160,7 @@ func IPAddressHandler(c *gin.Context) {
 func DomainHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
 	response := &ApiResponse{}
-	response.Data, response.AddlData, err = GetDomainInformation(hostname)
+	response.Data, err = GetDomainInformation(hostname)
 
 	if err == nil {
 		response.Success = true
@@ -310,12 +309,12 @@ func main() {
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
 	} else if *domainPtr != "" {
 		// Grab the domain information.
-		recs, _, _ := GetDomainInformation(*domainPtr)
+		recs, _ := GetDomainInformation(*domainPtr)
 		obj, _ := json.Marshal(recs)
 		fmt.Println(string(obj))
 	} else if *ipPtr != "" {
 		// Grab the information about the sole IP address.
-		rec, _, _ := GetIPInformation(*ipPtr)
+		rec, _ := GetIPInformation(*ipPtr)
 		obj, _ := json.Marshal(rec)
 		fmt.Println(string(obj))
 	} else {
