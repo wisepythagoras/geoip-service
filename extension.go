@@ -39,6 +39,7 @@ type ExtensionConfig struct {
 	HasLookup bool              `json:"hasLookup"`
 	Endpoints []EndpointDetails `json:"endpoints"`
 	Jobs      []CronJob         `json:"jobs"`
+	Name      string            `json:"name"`
 }
 
 type InstallFn func() ExtensionConfig
@@ -52,6 +53,7 @@ type Extension struct {
 	endpoints []EndpointDetails
 	hasLookup bool
 	scheduler *gocron.Scheduler
+	name      string
 	lookupFn  func(addr string) interface{}
 }
 
@@ -105,6 +107,11 @@ func (e *Extension) Init() error {
 	res := installFn()
 	e.endpoints = res.Endpoints
 	e.hasLookup = res.HasLookup
+	e.name = res.Name
+
+	if len(res.Name) == 0 {
+		return fmt.Errorf("extension at %q doesn't have a name", e.dir.Name())
+	}
 
 	if e.hasLookup {
 		err = e.vm.ExportTo(e.vm.Get("lookupIP"), &e.lookupFn)
