@@ -9,11 +9,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/oschwald/maxminddb-golang"
+	"github.com/wisepythagoras/geoip-service/crypto"
 )
 
 var cityMmdb *maxminddb.Reader
@@ -24,6 +26,7 @@ var whiteListedIPs []net.IP
 var hasWhitelist = false
 var dnsServerList = []string{}
 var extensions []*Extension
+var appAPIKey string
 
 func middleware(c *gin.Context) {
 	// If there was no whitelist specified, then we can proceed.
@@ -36,6 +39,15 @@ func middleware(c *gin.Context) {
 
 	if val := c.GetHeader("True-Client-IP"); len(val) > 0 {
 		clientIP = net.ParseIP(val)
+	}
+
+	apiKey := c.GetHeader("X-AUTH-TOKEN")
+	method := c.Request.Method
+	requiresAPIKey := method == "POST" || method == "PUT" || method == "DELETE"
+
+	if (len(apiKey) == 0 || apiKey != appAPIKey) && requiresAPIKey {
+		c.AbortWithStatus(401)
+		return
 	}
 
 	// Otherwise we need to check both list of IPs and IP ranges.
@@ -200,6 +212,7 @@ func main() {
 	dnsServers := flag.String("dns-servers", "", "The list of DNS servers. If not specified defaults to Cloudflare, Google, and OpenDNS")
 	publicFolder := flag.String("pub-dir", "", "Specify the location of the public folder (to serve a front end)")
 	extFolder := flag.String("ext-dir", "", "Specify the location of the folder containing the extensions")
+	apiKey := flag.String("api-key", "", "Specify an API key to protect your instance (it will be generated if you don't specify one)")
 
 	flag.Parse()
 
@@ -256,6 +269,29 @@ func main() {
 	}
 
 	if *shouldServe {
+		if len(*apiKey) > 0 {
+			appAPIKey = *apiKey
+		} else {
+			randBytes, err := crypto.GenRandomBytes(32, time.Now().Unix())
+
+			if err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(1)
+			}
+
+			hashBytes, err := crypto.GetSHA256Hash(randBytes)
+
+			if err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(1)
+			}
+
+			appAPIKey = crypto.ByteArrayToHex(hashBytes)
+		}
+
+		fmt.Println("API key:", appAPIKey)
+		fmt.Println("This API key should be used to access any non-GET endpoint")
+
 		if len(*whitelist) > 0 {
 			file, err := os.Open(*whitelist)
 
