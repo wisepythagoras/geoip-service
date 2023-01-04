@@ -17,7 +17,7 @@ func (s *Storage) Init() {
 	obj := s.VM.NewObject()
 	obj.Set("init", s.initStorage)
 	obj.Set("save", s.saveFile)
-	obj.Set("delete", s.deleteFile)
+	obj.Set("remove", s.deleteFile)
 	obj.Set("read", s.readFile)
 
 	s.VM.Set("storage", obj)
