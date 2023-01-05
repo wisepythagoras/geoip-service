@@ -107,7 +107,7 @@ func parseExtensions(path string) ([]*Extension, error) {
 
 	for _, f := range files {
 		if !f.IsDir() {
-			break
+			continue
 		}
 
 		extFiles, err := os.ReadDir(filepath.Join(path, f.Name()))

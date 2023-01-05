@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -111,8 +112,8 @@ func (e *Extension) Init() error {
 	e.hasLookup = res.HasLookup
 	e.name = res.Name
 
-	if len(res.Name) == 0 {
-		return fmt.Errorf("extension at %q doesn't have a name", e.dir.Name())
+	if len(res.Name) == 0 || strings.Contains(e.name, " ") {
+		return fmt.Errorf("extension at %q doesn't have a name or the name is malformed", e.dir.Name())
 	}
 
 	if e.hasLookup {
@@ -181,7 +182,7 @@ func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) boo
 	var handler HandlerFn
 	err = e.vm.ExportTo(e.vm.Get(details.Handler), &handler)
 
-	endpoint := filepath.Join("/api", details.Endpoint)
+	endpoint := filepath.Join("/api", e.name, details.Endpoint)
 
 	endpointHandler := func(c *gin.Context) {
 		// We need a wait group because the JS VM may run an async handler and if we
