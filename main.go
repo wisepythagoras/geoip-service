@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -11,7 +10,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/oschwald/maxminddb-golang"
@@ -68,33 +66,6 @@ func middleware(c *gin.Context) {
 }
 
 // https://github.com/allegro/bigcache
-
-func GetDomainInformation(hostname string) ([]*IPRecord, error) {
-	var records []*IPRecord = []*IPRecord{}
-
-	// Is this a valid domain name?
-	if !govalidator.IsDNSName(hostname) {
-		// Make sure the request is valid.
-		return records, errors.New("invalid input")
-	}
-
-	// Perform a DNS lookup.
-	ips, _ := DNSLookup(hostname, dnsServerList)
-
-	for i := 0; i < len(ips); i++ {
-		// Get the information on the current IP.
-		info, err := GetIPInformation(ips[i].String())
-
-		if err != nil {
-			continue
-		}
-
-		// Append the record to the array.
-		records = append(records, info)
-	}
-
-	return records, nil
-}
 
 func GetIPInformation(hostname string) (*IPRecord, error) {
 	// If you are using strings that may be invalid, check that ip is not nil.
@@ -169,10 +140,26 @@ func IPAddressHandler(c *gin.Context) {
 	c.JSON(200, response)
 }
 
-func DomainHandler(c *gin.Context) {
+func FastDomainHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
 	response := &ApiResponse{}
 	response.Data, err = GetDomainInformation(hostname)
+
+	if err == nil {
+		response.Success = true
+		response.Status = "Retrieved"
+	} else {
+		response.Success = false
+		response.Status = err.Error()
+	}
+
+	c.JSON(200, response)
+}
+
+func DomainHandler(c *gin.Context) {
+	hostname := c.Param("hostname")
+	response := &ApiResponse{}
+	response.Data, err = GetDomainInfoFromDNS(hostname, DNSALookup)
 
 	if err == nil {
 		response.Success = true
@@ -328,6 +315,7 @@ func main() {
 		}
 
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
+		r.GET("/api/domain/fast_info/:hostname", FastDomainHandler)
 		r.GET("/api/domain/info/:hostname", DomainHandler)
 		r.GET("/api/dns_servers", DNSServers)
 
