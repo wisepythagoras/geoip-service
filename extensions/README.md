@@ -80,6 +80,21 @@ const jobFunctionName = () => {
 
 Your cron jobs can be used to pull data from IP lists on the web, or whatever you need.
 
+### `hasLookup`
+
+The `hasLookup` option refers to whether the extension can perform IP lookups. However, in order for it to work you also need to define the `lookupIP` function. It takes in one argument, the IP address as a string, and you can return whatever you want. In the example below the function returns an object. The result of this lookup will be added to the `additional_information` field of the IP lookup object.
+
+``` js
+function lookupIP(ip) {
+    const details = getIPDetails(ip);
+
+    return {
+        appears_in_list: !!details,
+        details,
+    };
+}
+```
+
 ## Javascript APIs
 
 Coming soon.
