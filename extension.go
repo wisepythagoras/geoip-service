@@ -15,7 +15,9 @@ import (
 )
 
 type EndpointReq struct {
-	Param func(key string) string `json:"param"`
+	Param     func(key string) string `json:"param"`
+	GetHeader func(key string) string `json:"getHeader"`
+	GetQuery  func(key string) string `json:"getQuery"`
 }
 
 type EndpointRes struct {
@@ -188,7 +190,9 @@ func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) boo
 		wg := new(sync.WaitGroup)
 
 		req := EndpointReq{
-			Param: c.Param,
+			Param:     c.Param,
+			GetHeader: c.GetHeader,
+			GetQuery:  c.Query,
 		}
 		res := EndpointRes{
 			JSON: func(status int, resp any) {
