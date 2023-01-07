@@ -9,8 +9,21 @@ import (
 	js "github.com/dop251/goja"
 )
 
+type ipListConfig struct {
+	Name          string `json:"name"`
+	Format        string `json:"format"`
+	Description   string `json:"description"`
+	Maintainer    string `json:"maintainer"`
+	MaintainerURL string `json:"maintainer_url"`
+	Source        string `json:"source"`
+	Category      string `json:"category"`
+	Version       string `json:"version"`
+	Entries       string `json:"entries"`
+}
+
 type ipListObj struct {
-	Parse func(call js.FunctionCall) js.Value `json:"parse"`
+	Parse    func(call js.FunctionCall) js.Value `json:"parse"`
+	Generate func(call js.FunctionCall) js.Value `json:"generate"`
 }
 
 type IPList struct {
@@ -19,7 +32,8 @@ type IPList struct {
 
 func (ip *IPList) Init() {
 	obj := ipListObj{
-		Parse: ip.Parse,
+		Parse:    ip.Parse,
+		Generate: ip.Generate,
 	}
 
 	ip.VM.Set("IPList", obj)
@@ -43,6 +57,10 @@ func (ip *IPList) Parse(call js.FunctionCall) js.Value {
 	}
 
 	return ip.VM.ToValue(promise)
+}
+
+func (ip *IPList) Generate(call js.FunctionCall) js.Value {
+	return js.Undefined()
 }
 
 func parseSimpleIPList(list string) ([]string, error) {
