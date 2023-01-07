@@ -22,8 +22,10 @@ type EndpointReq struct {
 }
 
 type EndpointRes struct {
-	JSON  func(status int, resp any)   `json:"json"`
-	Abort func(status int, err string) `json:"abort"`
+	JSON  func(status int, resp any)          `json:"json"`
+	Abort func(status int, err string)        `json:"abort"`
+	Send  func(status int, mime, resp string) `json:"send"`
+	HTML  func(status int, html string)       `json:"html"`
 }
 
 type EndpointDetails struct {
@@ -208,6 +210,12 @@ func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) boo
 			Abort: func(status int, err string) {
 				c.AbortWithError(status, errors.New(err))
 				wg.Done()
+			},
+			Send: func(status int, mimeType string, resp string) {
+				c.Data(status, mimeType, []byte(resp))
+			},
+			HTML: func(status int, html string) {
+				c.Data(status, "text/html", []byte(html))
 			},
 		}
 
