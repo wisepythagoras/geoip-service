@@ -1,4 +1,4 @@
-package main
+package extension
 
 import (
 	"errors"
@@ -49,9 +49,9 @@ type InstallFn func() ExtensionConfig
 type HandlerFn func(req EndpointReq, res EndpointRes)
 
 type Extension struct {
-	extDir    string
-	dir       os.DirEntry
-	entry     os.DirEntry
+	ExtDir    string
+	Dir       os.DirEntry
+	Entry     os.DirEntry
 	vm        *js.Runtime
 	endpoints []EndpointDetails
 	hasLookup bool
@@ -65,7 +65,7 @@ func (e *Extension) Init() error {
 	e.vm = js.New()
 	e.vm.SetFieldNameMapper(js.TagFieldNameMapper("json", true))
 
-	entryPath := filepath.Join(e.extDir, e.dir.Name(), e.entry.Name())
+	entryPath := filepath.Join(e.ExtDir, e.Dir.Name(), e.Entry.Name())
 	bytes, err := os.ReadFile(entryPath)
 
 	if err != nil {
@@ -88,11 +88,11 @@ func (e *Extension) Init() error {
 
 	storageObj := jsapi.Storage{
 		VM:      e.vm,
-		DataDir: filepath.Join(e.extDir, e.dir.Name(), ".store"),
+		DataDir: filepath.Join(e.ExtDir, e.Dir.Name(), ".store"),
 	}
 	storageObj.Init()
 
-	_, err = e.vm.RunScript(e.dir.Name(), string(bytes))
+	_, err = e.vm.RunScript(e.Dir.Name(), string(bytes))
 
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func (e *Extension) Init() error {
 	e.name = res.Name
 
 	if len(res.Name) == 0 || strings.Contains(e.name, " ") {
-		return fmt.Errorf("extension at %q doesn't have a name or the name is malformed", e.dir.Name())
+		return fmt.Errorf("extension at %q doesn't have a name or the name is malformed", e.Dir.Name())
 	}
 
 	if e.hasLookup {
@@ -180,7 +180,12 @@ func (e *Extension) RegisterEndpoints(r *gin.Engine) bool {
 
 func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) bool {
 	var handler HandlerFn
-	err = e.vm.ExportTo(e.vm.Get(details.Handler), &handler)
+	err := e.vm.ExportTo(e.vm.Get(details.Handler), &handler)
+
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
 
 	endpoint := filepath.Join("/api", e.name, details.Endpoint)
 

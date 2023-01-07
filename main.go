@@ -12,18 +12,20 @@ import (
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/oschwald/maxminddb-golang"
 	"github.com/wisepythagoras/geoip-service/crypto"
+	"github.com/wisepythagoras/geoip-service/db"
+	"github.com/wisepythagoras/geoip-service/dns"
+	"github.com/wisepythagoras/geoip-service/extension"
+	"github.com/wisepythagoras/geoip-service/types"
 )
 
-var cityMmdb *maxminddb.Reader
-var asnMmdb *maxminddb.Reader
+var database *db.DB
 var err error
 var whiteListedIPRanges []*net.IPNet
 var whiteListedIPs []net.IP
 var hasWhitelist = false
 var dnsServerList = []string{}
-var extensions []*Extension
+var extensions []*extension.Extension
 var appAPIKey string
 
 func middleware(c *gin.Context) {
@@ -67,54 +69,9 @@ func middleware(c *gin.Context) {
 
 // https://github.com/allegro/bigcache
 
-func GetIPInformation(hostname string) (*IPRecord, error) {
-	// If you are using strings that may be invalid, check that ip is not nil.
-	ip := net.ParseIP(hostname)
-
-	// Create an instance of the IP record.
-	rec := &IPRecord{}
-
-	// Lookup the IP details from the city database.
-	err = cityMmdb.Lookup(ip, &rec)
-
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	// Lookup the IP details from the ASN database.
-	err = asnMmdb.Lookup(ip, &rec)
-
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	var addlData []any
-
-	for _, ext := range extensions {
-		if !ext.IsLookupExtension() {
-			continue
-		}
-
-		// Here we query the extension for information on the queried IP address. This data will
-		// be added on to the response payload in the end as additional information.
-		data, _ := ext.RunIPLookup(ip.String())
-
-		if data != nil {
-			addlData = append(addlData, data)
-		}
-	}
-
-	rec.IPAddress = hostname
-	rec.AddlData = addlData
-
-	return rec, nil
-}
-
 func IPAddressHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
-	response := &ApiResponse{}
+	response := &types.ApiResponse{}
 	response.Data = nil
 
 	// Is this a valid IP address?
@@ -131,7 +88,7 @@ func IPAddressHandler(c *gin.Context) {
 	response.Status = "Retrieved"
 
 	// Get the IP information for this.
-	response.Data, err = GetIPInformation(hostname)
+	response.Data, err = database.GetIPInformation(hostname)
 
 	if err != nil {
 		response.Status = err.Error()
@@ -142,8 +99,8 @@ func IPAddressHandler(c *gin.Context) {
 
 func FastDomainHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
-	response := &ApiResponse{}
-	response.Data, err = GetDomainInformation(hostname)
+	response := &types.ApiResponse{}
+	response.Data, err = database.GetDomainInformation(hostname, dnsServerList)
 
 	if err == nil {
 		response.Success = true
@@ -158,8 +115,8 @@ func FastDomainHandler(c *gin.Context) {
 
 func DomainHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
-	response := &ApiResponse{}
-	response.Data, err = GetDomainInfoFromDNS(hostname, DNSALookup)
+	response := &types.ApiResponse{}
+	response.Data, err = database.GetDomainInfoFromDNS(hostname, dnsServerList, dns.DNSALookup)
 
 	if err == nil {
 		response.Success = true
@@ -173,14 +130,14 @@ func DomainHandler(c *gin.Context) {
 }
 
 func DNSServers(c *gin.Context) {
-	response := &DNSApiResponse{
+	response := &types.ApiResponse{
 		Success: true,
 	}
 
 	if len(dnsServerList) > 0 {
-		response.Servers = dnsServerList
+		response.Data = dnsServerList
 	} else {
-		response.Servers = defaultDNSServers
+		response.Data = dns.DefaultDNSServers
 	}
 
 	c.JSON(200, response)
@@ -203,23 +160,6 @@ func main() {
 
 	flag.Parse()
 
-	// Open the city database.
-	cityMmdb, err = OpenCityDB()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Open the ASN database.
-	asnMmdb, err = OpenASNDB()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer cityMmdb.Close()
-	defer asnMmdb.Close()
-
 	if len(*extFolder) > 0 {
 		extensions, err = parseExtensions(*extFolder)
 
@@ -236,6 +176,14 @@ func main() {
 				os.Exit(1)
 			}
 		}
+	}
+
+	// Open the city database.
+	database = &db.DB{Extensions: extensions}
+	err := database.Open()
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	if len(*dnsServers) > 0 {
@@ -333,12 +281,12 @@ func main() {
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
 	} else if *domainPtr != "" {
 		// Grab the domain information.
-		recs, _ := GetDomainInformation(*domainPtr)
+		recs, _ := database.GetDomainInformation(*domainPtr, dnsServerList)
 		obj, _ := json.Marshal(recs)
 		fmt.Println(string(obj))
 	} else if *ipPtr != "" {
 		// Grab the information about the sole IP address.
-		rec, _ := GetIPInformation(*ipPtr)
+		rec, _ := database.GetIPInformation(*ipPtr)
 		obj, _ := json.Marshal(rec)
 		fmt.Println(string(obj))
 	} else {

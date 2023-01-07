@@ -1,4 +1,4 @@
-package main
+package types
 
 type IPRecord struct {
 	Country struct {

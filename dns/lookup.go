@@ -1,15 +1,13 @@
-package main
+package dns
 
 import (
 	"context"
-	"errors"
 	"net"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/miekg/dns"
 )
 
-var defaultDNSServers = []string{
+var DefaultDNSServers = []string{
 	"1.1.1.1:53",
 	"8.8.8.8:53",
 	"208.67.222.222:53",
@@ -54,7 +52,7 @@ func DNSLookup(domain string, dnsServers []string) ([]net.IPAddr, error) {
 	ipAddresses := []net.IPAddr{}
 
 	if len(dnsServers) == 0 {
-		dnsServers = defaultDNSServers
+		dnsServers = DefaultDNSServers
 	}
 
 	for _, dnsServer := range dnsServers {
@@ -80,7 +78,7 @@ func DNSALookup(domain string, dnsServers []string) ([]net.IP, error) {
 	client := new(dns.Client)
 
 	if len(dnsServers) == 0 {
-		dnsServers = defaultDNSServers
+		dnsServers = DefaultDNSServers
 	}
 
 	ipAddrMap := make(map[string]net.IP)
@@ -115,7 +113,7 @@ func DNSAAAALookup(domain string, dnsServers []string) ([]net.IP, error) {
 	client := new(dns.Client)
 
 	if len(dnsServers) == 0 {
-		dnsServers = defaultDNSServers
+		dnsServers = DefaultDNSServers
 	}
 
 	ipAddrMap := make(map[string]net.IP)
@@ -144,60 +142,4 @@ func DNSAAAALookup(domain string, dnsServers []string) ([]net.IP, error) {
 	}
 
 	return ipAddresses, nil
-}
-
-// GetDomainInformation is the old and fast way of getting DNS records.
-func GetDomainInformation(hostname string) ([]*IPRecord, error) {
-	var records []*IPRecord = []*IPRecord{}
-
-	// Is this a valid domain name?
-	if !govalidator.IsDNSName(hostname) {
-		// Make sure the request is valid.
-		return records, errors.New("invalid input")
-	}
-
-	// Perform a DNS lookup.
-	ips, _ := DNSLookup(hostname, dnsServerList)
-
-	for i := 0; i < len(ips); i++ {
-		// Get the information on the current IP.
-		info, err := GetIPInformation(ips[i].String())
-
-		if err != nil {
-			continue
-		}
-
-		// Append the record to the array.
-		records = append(records, info)
-	}
-
-	return records, nil
-}
-
-// GetDomainInfoFromDNS is the new and slower way of getting DNS records.
-func GetDomainInfoFromDNS(hostname string, caller DNSCaller) ([]*IPRecord, error) {
-	var records []*IPRecord = []*IPRecord{}
-
-	// Is this a valid domain name?
-	if !govalidator.IsDNSName(hostname) {
-		// Make sure the request is valid.
-		return records, errors.New("invalid input")
-	}
-
-	// Perform a DNS lookup.
-	ips, _ := caller(hostname, dnsServerList)
-
-	for i := 0; i < len(ips); i++ {
-		// Get the information on the current IP.
-		info, err := GetIPInformation(ips[i].String())
-
-		if err != nil {
-			continue
-		}
-
-		// Append the record to the array.
-		records = append(records, info)
-	}
-
-	return records, nil
 }

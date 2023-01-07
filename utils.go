@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/wisepythagoras/geoip-service/extension"
 )
 
 func sliceContains[T any](arr []T, thing T) bool {
@@ -97,9 +99,9 @@ func fileExists(path string) bool {
 	return true
 }
 
-func parseExtensions(path string) ([]*Extension, error) {
+func parseExtensions(path string) ([]*extension.Extension, error) {
 	files, err := os.ReadDir(path)
-	extensions := []*Extension{}
+	extensions := []*extension.Extension{}
 
 	if err != nil {
 		return extensions, err
@@ -129,13 +131,13 @@ func parseExtensions(path string) ([]*Extension, error) {
 		}
 
 		if entry == nil {
-			return extensions, fmt.Errorf("Extension folder %q doesn't have an entry point (index.js)", f.Name())
+			return extensions, fmt.Errorf("extension folder %q doesn't have an entry point (index.js)", f.Name())
 		}
 
-		extension := &Extension{
-			extDir: path,
-			dir:    f,
-			entry:  entry,
+		extension := &extension.Extension{
+			ExtDir: path,
+			Dir:    f,
+			Entry:  entry,
 		}
 
 		extensions = append(extensions, extension)
