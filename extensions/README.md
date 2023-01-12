@@ -2,6 +2,21 @@
 
 The GeoIP service is extensible via a Javascript engine. The Javascript API provides a few classes that allow you to manipulate and manage IPs and IP sets.
 
+## Directory structure
+
+The `geoip-service` app takes a path to the folder containing the extensions. That folder needs to have the following structure.
+
+```
+extensions_folder/
+├─ extension_1/
+│  ├─ index.js
+├─ extension_2/
+│  ├─ index.js
+│  ...
+├─ extension_n/
+│  ├─ index.js
+```
+
 ## Anatomy
 
 Every extension needs to be vanilla Javascript. You can choose to code your extension in Typescript, but ultimatelly it needs to compile down to one file. An example of an extension compiling down to JS can be found [here](https://github.com/wisepythagoras/geoip-service-extensions/tree/main/socks-proxy-30d) (the building is managed by [Parcel](https://parceljs.org/)). In that repository you'll also find all of the [types](https://github.com/wisepythagoras/geoip-service-extensions/blob/main/index.d.ts) for Typescript.
