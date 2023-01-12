@@ -2,7 +2,7 @@
 
 The GeoIP service is extensible via a Javascript engine. The Javascript API provides a few classes that allow you to manipulate and manage IPs and IP sets.
 
-## Directory structure
+## Directory Structure
 
 The `geoip-service` app takes a path to the folder containing the extensions. That folder needs to have the following structure.
 
