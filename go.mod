@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
-	github.com/dop251/goja v0.0.0-20221229151140-b95230a9dbad
+	github.com/dop251/goja v0.0.0-20230114103038-6eb401d70090
 	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.8.2
 	github.com/go-co-op/gocron v1.18.0
@@ -13,7 +13,7 @@ require (
 )
 
 require (
-	github.com/dlclark/regexp2 v1.7.0 // indirect
+	github.com/dlclark/regexp2 v1.8.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -33,7 +33,7 @@ require (
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
