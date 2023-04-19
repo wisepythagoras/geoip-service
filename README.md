@@ -55,3 +55,7 @@ The `-pub-dir` flag can be used to specify a front end application that calls al
 The app has an integrated extension engine which is mostly meant to be used when running it as an API server. An extension can register API endpoints, run cron jobs, and manage data on their own, which the main app can query. Below you'll find an example of an extension that queries data from a 3rd party IP list.
 
 See the full documentation on extensions [here](https://github.com/wisepythagoras/geoip-service/tree/master/extension).
+
+## License
+
+Although the license for the source code is GNU GPL v3, I prohibit the use of the code herein for the training of any kind of AI model.
