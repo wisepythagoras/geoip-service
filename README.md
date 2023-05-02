@@ -58,4 +58,4 @@ See the full documentation on extensions [here](https://github.com/wisepythagora
 
 ## License
 
-Although the license for the source code is GNU GPL v3, I prohibit the use of the code herein for the training of any kind of AI model.
+Although the source code is licensed under GNU GPLv3, I prohibit the use of this code for the purpsoses of training any kind of AI model. This applies to any version of the source code and/or commit, historic, current, and/or new.
