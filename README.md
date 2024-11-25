@@ -4,11 +4,13 @@ A GeoIP service that can be a REST API or command line tool.
 
 ## Building
 
-The only dependencies that this app has are [Gin](https://github.com/gin-gonic/gin), for setting up a webserver, and [govalidator](github.com/asaskevich/govalidator), for validating input.
+This app has as few dependencies as possible. Notably [Gin](https://github.com/gin-gonic/gin), for setting up a webserver, and [govalidator](github.com/asaskevich/govalidator), for validating input. You should be able to get started by running the following:
 
 ``` sh
 go build .
 ```
+
+Note that you will need to get your own copy of the Maxmind IP database (see info [here](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/)).
 
 ## Using
 
