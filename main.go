@@ -29,8 +29,17 @@ var extensions []*extension.Extension
 var appAPIKey string
 
 func middleware(c *gin.Context) {
+	apiKey := c.GetHeader("X-AUTH-TOKEN")
+	method := c.Request.Method
+	requiresAPIKey := method == "POST" || method == "PUT" || method == "DELETE"
+
 	// If there was no whitelist specified, then we can proceed.
 	if !hasWhitelist {
+		if (len(apiKey) == 0 || apiKey != appAPIKey) && requiresAPIKey {
+			c.AbortWithStatus(401)
+			return
+		}
+
 		c.Next()
 		return
 	}
@@ -40,10 +49,6 @@ func middleware(c *gin.Context) {
 	if val := c.GetHeader("True-Client-IP"); len(val) > 0 {
 		clientIP = net.ParseIP(val)
 	}
-
-	apiKey := c.GetHeader("X-AUTH-TOKEN")
-	method := c.Request.Method
-	requiresAPIKey := method == "POST" || method == "PUT" || method == "DELETE"
 
 	if (len(apiKey) == 0 || apiKey != appAPIKey) && requiresAPIKey {
 		c.AbortWithStatus(401)
@@ -152,7 +157,7 @@ func main() {
 	ipPtr := flag.String("ip", "", "An IP address")
 	shouldServe := flag.Bool("serve", false, "Run the HTTP server")
 	serveIP := flag.String("sip", "127.0.0.1", "The IP to serve on (127.0.0.1 will make it accessible only from localhost)")
-	whitelist := flag.String("whitelist", "", "If specified, it will only allow (only used with -serve)")
+	whitelist := flag.String("whitelist", "", "If specified, it will only allow access to the IPs in the list (only used with -serve)")
 	dnsServers := flag.String("dns-servers", "", "The list of DNS servers. If not specified defaults to Cloudflare, Google, and OpenDNS")
 	publicFolder := flag.String("pub-dir", "", "Specify the location of the public folder (to serve a front end)")
 	extFolder := flag.String("ext-dir", "", "Specify the location of the folder containing the extensions")
