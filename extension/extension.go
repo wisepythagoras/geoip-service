@@ -88,11 +88,19 @@ func (e *Extension) Init() error {
 	ipObj := jsapi.JSIP{VM: e.vm}
 	ipObj.Init()
 
+	dataDir := filepath.Join(e.ExtDir, e.Dir.Name(), ".store")
+
 	storageObj := jsapi.Storage{
 		VM:      e.vm,
-		DataDir: filepath.Join(e.ExtDir, e.Dir.Name(), ".store"),
+		DataDir: dataDir,
 	}
 	storageObj.Init()
+
+	sqlDb := jsapi.SqlDB{
+		VM:      e.vm,
+		DataDir: dataDir,
+	}
+	sqlDb.Init()
 
 	_, err = e.vm.RunScript(e.Dir.Name(), string(bytes))
 
