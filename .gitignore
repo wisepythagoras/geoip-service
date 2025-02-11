@@ -7,3 +7,4 @@ GeoLite2*.gz
 whitelist
 dns_servers
 extensions/*/
+blocklist-ipsets/
