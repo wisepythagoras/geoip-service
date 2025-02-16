@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/gin-contrib/static"
@@ -262,9 +263,32 @@ func main() {
 				os.Exit(1)
 			}
 
+			configPath := path.Join(*publicFolder, "conf.json")
+			paths := make(map[string]bool)
+			paths["/"] = true
+
+			if fileExists(configPath) {
+				config, err := ReadConfig(fmt.Sprintf("%s/conf.json", *publicFolder))
+
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+
+				for _, endpoint := range config.Views {
+					paths[endpoint] = true
+				}
+			}
+
 			// Add a public folder, if one was specified. This is available so that a you can run
 			// a front end application, instead of using it just as an API.
 			r.Use(static.Serve("/", static.LocalFile(*publicFolder, false)))
+
+			for endpoint, _ := range paths {
+				r.GET(endpoint, func(c *gin.Context) {
+					c.File(path.Join(*publicFolder, "index.html"))
+				})
+			}
 		}
 
 		r.GET("/api/ip_address/info/:hostname", IPAddressHandler)
