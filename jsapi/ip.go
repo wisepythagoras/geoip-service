@@ -64,11 +64,32 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 	inst.Set("isPrivate", func(_ js.FunctionCall) js.Value {
 		return ip.VM.ToValue(obj.IP.IsPrivate())
 	})
+	inst.Set("isGlobalUnicast", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsGlobalUnicast())
+	})
+	inst.Set("isInterfaceLocalMulticast", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsInterfaceLocalMulticast())
+	})
+	inst.Set("isLinkLocalMulticast", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsLinkLocalMulticast())
+	})
+	inst.Set("isLinkLocalUnicast", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsLinkLocalUnicast())
+	})
+	inst.Set("isMulticast", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IP.IsMulticast())
+	})
 	inst.Set("isUnspecified", func(_ js.FunctionCall) js.Value {
 		return ip.VM.ToValue(obj.IP.IsUnspecified())
 	})
 	inst.Set("getMask", func(_ js.FunctionCall) js.Value {
 		return ip.VM.ToValue(obj.IP.DefaultMask().String())
+	})
+	inst.Set("getRange", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IPRange.String())
+	})
+	inst.Set("getRangeNetwork", func(_ js.FunctionCall) js.Value {
+		return ip.VM.ToValue(obj.IPRange.Network())
 	})
 	inst.Set("contains", func(call js.FunctionCall) js.Value {
 		if len(call.Arguments) < 1 {
