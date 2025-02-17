@@ -38,18 +38,25 @@ func (s *SqlDB) constructor(call js.ConstructorCall) *js.Object {
 			}
 		}
 
-		tx := db.Exec(query, args...)
+		promise, resolve, reject := s.VM.NewPromise()
 
-		if tx.Error != nil {
-			s.VM.Interrupt(tx.Error)
-			return js.Null()
-		}
+		go func() {
+			tx := db.Exec(query, args...)
 
-		obj := make(map[string]any)
+			if tx.Error != nil {
+				// s.VM.Interrupt(tx.Error)
+				reject(tx.Error)
+				return
+			}
 
-		obj["rowsAffected"] = tx.RowsAffected
+			obj := make(map[string]any)
 
-		return s.VM.ToValue(obj)
+			obj["rowsAffected"] = tx.RowsAffected
+
+			resolve(obj)
+		}()
+
+		return s.VM.ToValue(promise)
 	})
 
 	inst.Set("query", func(call js.FunctionCall) js.Value {
@@ -62,16 +69,22 @@ func (s *SqlDB) constructor(call js.ConstructorCall) *js.Object {
 			}
 		}
 
-		results := make([]map[string]any, 0)
+		promise, resolve, reject := s.VM.NewPromise()
 
-		tx := db.Raw(query, args...).Scan(&results)
+		go func() {
+			results := make([]map[string]any, 0)
 
-		if tx.Error != nil {
-			s.VM.Interrupt(tx.Error)
-			return js.Null()
-		}
+			tx := db.Raw(query, args...).Scan(&results)
 
-		return s.VM.ToValue(results)
+			if tx.Error != nil {
+				reject(tx.Error)
+				return
+			}
+
+			resolve(results)
+		}()
+
+		return s.VM.ToValue(promise)
 	})
 
 	return inst

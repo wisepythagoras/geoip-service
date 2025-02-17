@@ -95,12 +95,13 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 		}
 
 		if len(call.Arguments) < 1 {
-			return ip.VM.NewTypeError("Network prefix required")
+			ip.VM.Interrupt(fmt.Errorf("error: Network prefix required"))
+			return js.Undefined()
 		}
 
 		networkPrefix := call.Argument(0).ToInteger()
-		cidarRange := fmt.Sprintf("%s/%d", ipAddress, networkPrefix)
-		_, r, err := net.ParseCIDR(cidarRange)
+		cidrRange := fmt.Sprintf("%s/%d", ipAddress, networkPrefix)
+		_, r, err := net.ParseCIDR(cidrRange)
 
 		if err != nil {
 			return js.Undefined()
