@@ -85,8 +85,32 @@ func (ip *JSIP) constructor(call js.ConstructorCall) *js.Object {
 	inst.Set("getMask", func(_ js.FunctionCall) js.Value {
 		return ip.VM.ToValue(obj.IP.DefaultMask().String())
 	})
-	inst.Set("getRange", func(_ js.FunctionCall) js.Value {
-		return ip.VM.ToValue(obj.IPRange.String())
+	inst.Set("getRange", func(call js.FunctionCall) js.Value {
+		if isCidrRange {
+			o := make(map[string]string)
+			o["ip"] = obj.IPRange.IP.String()
+			o["range"] = obj.IPRange.String()
+
+			return ip.VM.ToValue(o)
+		}
+
+		if len(call.Arguments) < 1 {
+			return ip.VM.NewTypeError("Network prefix required")
+		}
+
+		networkPrefix := call.Argument(0).ToInteger()
+		cidarRange := fmt.Sprintf("%s/%d", ipAddress, networkPrefix)
+		_, r, err := net.ParseCIDR(cidarRange)
+
+		if err != nil {
+			return js.Undefined()
+		}
+
+		o := make(map[string]string)
+		o["ip"] = r.IP.String()
+		o["range"] = r.String()
+
+		return ip.VM.ToValue(o)
 	})
 	inst.Set("getRangeNetwork", func(_ js.FunctionCall) js.Value {
 		return ip.VM.ToValue(obj.IPRange.Network())
