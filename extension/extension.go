@@ -88,6 +88,9 @@ func (e *Extension) Init() error {
 	ipObj := jsapi.JSIP{VM: e.vm}
 	ipObj.Init()
 
+	ipSetObj := jsapi.JSIPSet{VM: e.vm}
+	ipSetObj.Init()
+
 	dataDir := filepath.Join(e.ExtDir, e.Dir.Name(), ".store")
 
 	storageObj := jsapi.Storage{
