@@ -60,7 +60,19 @@ func (ip *IPList) Parse(call js.FunctionCall) js.Value {
 }
 
 func (ip *IPList) Generate(call js.FunctionCall) js.Value {
-	return js.Undefined()
+	if len(call.Arguments) == 0 {
+		return js.Undefined()
+	}
+
+	ips := make([]string, 0)
+	err := ip.VM.ExportTo(call.Argument(0), &ips)
+
+	if err != nil {
+		ip.VM.Interrupt(err)
+		return js.Undefined()
+	}
+
+	return ip.VM.ToValue(strings.Join(ips, "\n"))
 }
 
 func parseSimpleIPList(list string) ([]string, error) {
