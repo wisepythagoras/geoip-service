@@ -127,9 +127,30 @@ func (ip *JSIPSet) constructor(call js.ConstructorCall) *js.Object {
 		return ip.VM.ToValue(false)
 	})
 
-	// inst.Set("append", func(call js.FunctionCall) js.Value {
+	inst.Set("append", func(call js.FunctionCall) js.Value {
+		if len(call.Arguments) == 0 {
+			return ip.VM.ToValue(false)
+		}
 
-	// })
+		entry := call.Argument(0).String()
+		entries = append(entries, entry)
+
+		if strings.Contains(entry, "/") {
+			_, cidrEntry, err := net.ParseCIDR(entry)
+
+			if err != nil {
+				ip.VM.Interrupt(err)
+				return nil
+			}
+
+			cidrEntries = append(cidrEntries, cidrEntry)
+			cidrEntryMap[cidrEntry.String()] = cidrEntry
+		} else {
+			ipAddrsMap[entry] = net.ParseIP(entry)
+		}
+
+		return ip.VM.ToValue(true)
+	})
 
 	return inst
 }
