@@ -152,5 +152,23 @@ func (ip *JSIPSet) constructor(call js.ConstructorCall) *js.Object {
 		return ip.VM.ToValue(true)
 	})
 
+	inst.Set("generate", func(_ js.FunctionCall) js.Value {
+		header := ""
+
+		if len(opts.Name) > 0 {
+			header = fmt.Sprintf("%s\n#\n# %s\n#", header, opts.Name)
+		}
+
+		if len(opts.Description) > 0 {
+			header = fmt.Sprintf("%s\n# %s\n#", header, opts.Description)
+		}
+
+		for _, entry := range entries {
+			header = fmt.Sprintf("%s\n%s", header, entry)
+		}
+
+		return ip.VM.ToValue(header)
+	})
+
 	return inst
 }
