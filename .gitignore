@@ -8,3 +8,5 @@ whitelist
 dns_servers
 extensions/*/
 blocklist-ipsets/
+deploy.sh
+stuff
