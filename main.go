@@ -77,6 +77,8 @@ func middleware(c *gin.Context) {
 
 func IPAddressHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
+	clientIPStr := c.ClientIP()
+	clientIP := net.ParseIP(clientIPStr)
 	response := &types.ApiResponse{}
 	response.Data = nil
 
@@ -94,7 +96,7 @@ func IPAddressHandler(c *gin.Context) {
 	response.Status = "Retrieved"
 
 	// Get the IP information for this.
-	response.Data, err = database.GetIPInformation(hostname)
+	response.Data, err = database.GetIPInformation(hostname, &clientIP)
 
 	if err != nil {
 		response.Status = err.Error()
@@ -105,8 +107,10 @@ func IPAddressHandler(c *gin.Context) {
 
 func FastDomainHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
+	clientIPStr := c.ClientIP()
+	clientIP := net.ParseIP(clientIPStr)
 	response := &types.ApiResponse{}
-	response.Data, err = database.GetDomainInformation(hostname, dnsServerList)
+	response.Data, err = database.GetDomainInformation(hostname, dnsServerList, &clientIP)
 
 	if err == nil {
 		response.Success = true
@@ -121,8 +125,10 @@ func FastDomainHandler(c *gin.Context) {
 
 func DomainHandler(c *gin.Context) {
 	hostname := c.Param("hostname")
+	clientIPStr := c.ClientIP()
+	clientIP := net.ParseIP(clientIPStr)
 	response := &types.ApiResponse{}
-	response.Data, err = database.GetDomainInfoFromDNS(hostname, dnsServerList, dns.DNSALookup)
+	response.Data, err = database.GetDomainInfoFromDNS(hostname, dnsServerList, dns.DNSALookup, &clientIP)
 
 	if err == nil {
 		response.Success = true
@@ -310,12 +316,12 @@ func main() {
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
 	} else if *domainPtr != "" {
 		// Grab the domain information.
-		recs, _ := database.GetDomainInformation(*domainPtr, dnsServerList)
+		recs, _ := database.GetDomainInformation(*domainPtr, dnsServerList, nil)
 		obj, _ := json.Marshal(recs)
 		fmt.Println(string(obj))
 	} else if *ipPtr != "" {
 		// Grab the information about the sole IP address.
-		rec, _ := database.GetIPInformation(*ipPtr)
+		rec, _ := database.GetIPInformation(*ipPtr, nil)
 		obj, _ := json.Marshal(rec)
 		fmt.Println(string(obj))
 	} else {

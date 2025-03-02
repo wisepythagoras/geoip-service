@@ -41,7 +41,7 @@ func (db *DB) Open() error {
 	return nil
 }
 
-func (db *DB) GetIPInformation(hostname string) (*types.IPRecord, error) {
+func (db *DB) GetIPInformation(hostname string, clientIP *net.IP) (*types.IPRecord, error) {
 	// If you are using strings that may be invalid, check that ip is not nil.
 	ip := net.ParseIP(hostname)
 
@@ -70,9 +70,15 @@ func (db *DB) GetIPInformation(hostname string) (*types.IPRecord, error) {
 			continue
 		}
 
+		clientIPStr := ""
+
+		if clientIP != nil {
+			clientIPStr = clientIP.String()
+		}
+
 		// Here we query the extension for information on the queried IP address. This data will
 		// be added on to the response payload in the end as additional information.
-		data, _ := ext.RunIPLookup(ip.String())
+		data, _ := ext.RunIPLookup(ip.String(), clientIPStr)
 
 		if data != nil {
 			addlData = append(addlData, data)
@@ -86,7 +92,7 @@ func (db *DB) GetIPInformation(hostname string) (*types.IPRecord, error) {
 }
 
 // GetDomainInformation is the old and fast way of getting DNS records.
-func (db *DB) GetDomainInformation(hostname string, dnsServerList []string) ([]*types.IPRecord, error) {
+func (db *DB) GetDomainInformation(hostname string, dnsServerList []string, clientIP *net.IP) ([]*types.IPRecord, error) {
 	var records []*types.IPRecord = []*types.IPRecord{}
 
 	// Is this a valid domain name?
@@ -100,7 +106,7 @@ func (db *DB) GetDomainInformation(hostname string, dnsServerList []string) ([]*
 
 	for i := 0; i < len(ips); i++ {
 		// Get the information on the current IP.
-		info, err := db.GetIPInformation(ips[i].String())
+		info, err := db.GetIPInformation(ips[i].String(), clientIP)
 
 		if err != nil {
 			continue
@@ -114,7 +120,12 @@ func (db *DB) GetDomainInformation(hostname string, dnsServerList []string) ([]*
 }
 
 // GetDomainInfoFromDNS is the new and slower way of getting DNS records.
-func (db *DB) GetDomainInfoFromDNS(hostname string, dnsServerList []string, caller dns.DNSCaller) ([]*types.IPRecord, error) {
+func (db *DB) GetDomainInfoFromDNS(
+	hostname string,
+	dnsServerList []string,
+	caller dns.DNSCaller,
+	clientIP *net.IP,
+) ([]*types.IPRecord, error) {
 	var records []*types.IPRecord = []*types.IPRecord{}
 
 	// Is this a valid domain name?
@@ -128,7 +139,7 @@ func (db *DB) GetDomainInfoFromDNS(hostname string, dnsServerList []string, call
 
 	for i := 0; i < len(ips); i++ {
 		// Get the information on the current IP.
-		info, err := db.GetIPInformation(ips[i].String())
+		info, err := db.GetIPInformation(ips[i].String(), clientIP)
 
 		if err != nil {
 			continue
