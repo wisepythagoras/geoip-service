@@ -10,3 +10,5 @@ extensions/*/
 blocklist-ipsets/
 deploy.sh
 stuff
+gis-dist/
+ip-threat-hunter/

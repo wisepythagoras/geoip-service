@@ -19,6 +19,7 @@ type EndpointReq struct {
 	Param     func(key string) string `json:"param"`
 	GetHeader func(key string) string `json:"getHeader"`
 	GetQuery  func(key string) string `json:"getQuery"`
+	ClientIP  func() string           `json:"clientIP"`
 }
 
 type EndpointRes struct {
@@ -212,6 +213,7 @@ func (e *Extension) registerEndpoint(r *gin.Engine, details EndpointDetails) boo
 			Param:     c.Param,
 			GetHeader: c.GetHeader,
 			GetQuery:  c.Query,
+			ClientIP:  c.ClientIP,
 		}
 		res := EndpointRes{
 			JSON: func(status int, resp any) {

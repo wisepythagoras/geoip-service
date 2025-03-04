@@ -155,10 +155,6 @@ func DNSServers(c *gin.Context) {
 	c.JSON(200, response)
 }
 
-func NotFoundHandler(c *gin.Context) {
-	c.Status(404)
-}
-
 func main() {
 	domainPtr := flag.String("domain", "", "A domain name")
 	ipPtr := flag.String("ip", "", "An IP address")
@@ -263,6 +259,14 @@ func main() {
 
 		r.Use(middleware)
 
+		r.NoRoute(func(c *gin.Context) {
+			if len(*publicFolder) > 0 {
+				c.File(path.Join(*publicFolder, "index.html"))
+			}
+
+			c.Status(http.StatusNotFound)
+		})
+
 		if len(*publicFolder) > 0 {
 			if !fileExists(*publicFolder) {
 				fmt.Println("The provided public folder doesn't exist")
@@ -310,8 +314,6 @@ func main() {
 
 			ext.RegisterEndpoints(r)
 		}
-
-		r.NoRoute(NotFoundHandler)
 
 		http.ListenAndServe(fmt.Sprintf("%s:8228", *serveIP), r)
 	} else if *domainPtr != "" {
