@@ -1,16 +1,18 @@
 module github.com/wisepythagoras/geoip-service
 
 go 1.22.0
+toolchain go1.24.1
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/dop251/goja v0.0.0-20250125213203-5ef83b82af17
+	github.com/fatih/color v1.18.0
 	github.com/gin-contrib/static v1.1.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-co-op/gocron v1.37.0
 	github.com/miekg/dns v1.1.62
 	github.com/oschwald/maxminddb-golang v1.13.1
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 )
@@ -20,7 +22,6 @@ require (
 	github.com/bytedance/sonic/loader v0.2.3 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gin-contrib/sse v1.0.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
